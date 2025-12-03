@@ -8,7 +8,7 @@ from tensorflow.keras.models import load_model
 
 #CẤU HÌNH ĐƯỜNG DẪN
 
-MODEL_PATH = "../model/kidney_disease_model.h5"   
+MODEL_PATH = "../model/best_kidney_model.h5"   
 SCALER_PATH = "../model/scaler.pkl"               
 
 
@@ -105,7 +105,7 @@ def predict_ckd(features: PatientFeatures):
     # Dự đoán xác suất CKD
     prob = float(model.predict(X_scaled)[0][0])
 
-    # Ngưỡng 0.5 (bạn có thể thay bằng threshold tối ưu nếu đã tinh chỉnh)
+    # Ngưỡng 0.5 
     pred_label = 1 if prob >= 0.5 else 0
 
     return pred_label, prob
