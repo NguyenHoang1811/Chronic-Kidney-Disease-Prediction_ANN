@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chẩn đoán bệnh suy thận mạn tính (CKD)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            background: linear-gradient(135deg, #0066cc 0%, #0099ff 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 20px 20px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            background-color: #0066cc;
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+        }
+        .form-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .form-section h5 {
+            color: #0066cc;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #0066cc;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #333;
+        }
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+        .result-box {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-positive {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+            color: white;
+        }
+        .result-negative {
+            background: linear-gradient(135deg, #20c997 0%, #3dd9a7 100%);
+            color: white;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #0066cc 0%, #0099ff 100%);
+            border: none;
+            padding: 12px 30px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0055aa 0%, #0088ee 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,102,204,0.3);
+        }
+        .help-text {
+            font-size: 0.85rem;
+            color: #666;
+            font-style: italic;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 1.5rem;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 fw-bold">
+                        <i class="bi bi-heart-pulse"></i> Hệ thống chẩn đoán bệnh suy thận mạn tính
+                    </h1>
+                    <p class="lead mb-0">Sử dụng mô hình ANN để dự đoán nguy cơ CKD</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="bg-white text-primary rounded-pill px-3 py-2 d-inline-block">
+                        <small>Độ chính xác: 85%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Form nhập liệu -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="bi bi-clipboard-data"></i> Nhập thông tin bệnh nhân</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="ckdForm">
+                            <!-- Features theo đúng thứ tự trong model -->
+                            <div class="form-section">
+                                <h5>Thông tin cơ bản</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label required">Tuổi (age)</label>
+                                        <input type="number" class="form-control" id="age" name="age" min="0" max="120" step="1" required>
+                                        <div class="help-text">Tuổi bệnh nhân (năm)</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label required">Huyết áp (bp)</label>
+                                        <input type="number" class="form-control" id="bp" name="bp" min="0" max="300" step="0.1" required>
+                                        <div class="help-text">Huyết áp tâm thu (mmHg)</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h5>Xét nghiệm nước tiểu</h5>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required">Tỷ trọng (sg)</label>
+                                        <input type="number" class="form-control" id="sg" name="sg" min="1.000" max="1.050" step="0.001" required>
+                                        <div class="help-text">1.005-1.030</div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required">Albumin (al)</label>
+                                        <input type="number" class="form-control" id="al" name="al" min="0" max="5" step="1" required>
+                                        <div class="help-text">0-4: Bình thường, 5: Rất cao</div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required">Đường (su)</label>
+                                        <input type="number" class="form-control" id="su" name="su" min="0" max="5" step="1" required>
+                                        <div class="help-text">0: Không có, 1-5: Mức độ có đường</div>
+                                    </div>
+                                    
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Hồng cầu (rbc)</label>
+                                        <select class="form-select" id="rbc" name="rbc" required>
+                                            <option value="0">Bình thường</option>
+                                            <option value="1">Bất thường</option>
+                                        </select>
+                                        <div class="help-text">0: normal, 1: abnormal</div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Tế bào mủ (pc)</label>
+                                        <select class="form-select" id="pc" name="pc" required>
+                                            <option value="0">Bình thường</option>
+                                            <option value="1">Bất thường</option>
+                                        </select>
+                                        <div class="help-text">0: normal, 1: abnormal</div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Cụm TB mủ (pcc)</label>
+                                        <select class="form-select" id="pcc" name="pcc" required>
+                                            <option value="0">Không có</option>
+                                            <option value="1">Có</option>
+                                        </select>
+                                        <div class="help-text">0: notpresent, 1: present</div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Vi khuẩn (ba)</label>
+                                        <select class="form-select" id="ba" name="ba" required>
+                                            <option value="0">Không có</option>
+                                            <option value="1">Có</option>
+                                        </select>
+                                        <div class="help-text">0: notpresent, 1: present</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h5>Xét nghiệm máu</h5>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required">Đường huyết (bgr)</label>
+                                        <input type="number" class="form-control" id="bgr" name="bgr" min="0" max="500" step="1" required>
+                                        <div class="help-text">Đường huyết ngẫu nhiên (mg/dL)</div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required">Ure máu (bu)</label>
+                                        <input type="number" class="form-control" id="bu" name="bu" min="0" max="200" step="0.1" required>
+                                        <div class="help-text">Ure máu (mg/dL)</div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required">Creatinine (sc)</label>
+                                        <input type="number" class="form-control" id="sc" name="sc" min="0" max="20" step="0.01" required>
+                                        <div class="help-text">Creatinine huyết thanh (mg/dL)</div>
+                                    </div>
+                                    
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Natri (sod)</label>
+                                        <input type="number" class="form-control" id="sod" name="sod" min="100" max="200" step="0.1" required>
+                                        <div class="help-text">Nồng độ natri (mEq/L)</div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Kali (pot)</label>
+                                        <input type="number" class="form-control" id="pot" name="pot" min="2" max="8" step="0.1" required>
+                                        <div class="help-text">Nồng độ kali (mEq/L)</div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Hemoglobin (hemo)</label>
+                                        <input type="number" class="form-control" id="hemo" name="hemo" min="0" max="20" step="0.1" required>
+                                        <div class="help-text">Hemoglobin (g/dL)</div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">PCV</label>
+                                        <input type="number" class="form-control" id="pcv" name="pcv" min="0" max="70" step="0.1" required>
+                                        <div class="help-text">Thể tích khối hồng cầu (%)</div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required">Bạch cầu (wc)</label>
+                                        <input type="number" class="form-control" id="wc" name="wc" min="0" max="20000" step="1" required>
+                                        <div class="help-text">Số lượng bạch cầu (cells/cumm)</div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required">Hồng cầu (rc)</label>
+                                        <input type="number" class="form-control" id="rc" name="rc" min="0" max="10" step="0.01" required>
+                                        <div class="help-text">Số lượng hồng cầu (millions/cmm)</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h5>Bệnh nền và triệu chứng</h5>
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Tăng huyết áp (htn)</label>
+                                        <select class="form-select" id="htn" name="htn" required>
+                                            <option value="0">Không</option>
+                                            <option value="1">Có</option>
+                                        </select>
+                                        <div class="help-text">0: no, 1: yes</div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Đái tháo đường (dm)</label>
+                                        <select class="form-select" id="dm" name="dm" required>
+                                            <option value="0">Không</option>
+                                            <option value="1">Có</option>
+                                        </select>
+                                        <div class="help-text">0: no, 1: yes</div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Bệnh mạch vành (cad)</label>
+                                        <select class="form-select" id="cad" name="cad" required>
+                                            <option value="0">Không</option>
+                                            <option value="1">Có</option>
+                                        </select>
+                                        <div class="help-text">0: no, 1: yes</div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Chán ăn (appet)</label>
+                                        <select class="form-select" id="appet" name="appet" required>
+                                            <option value="0">Bình thường</option>
+                                            <option value="1">Kém</option>
+                                        </select>
+                                        <div class="help-text">0: good, 1: poor</div>
+                                    </div>
+                                    
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Phù (pe)</label>
+                                        <select class="form-select" id="pe" name="pe" required>
+                                            <option value="0">Không</option>
+                                            <option value="1">Có</option>
+                                        </select>
+                                        <div class="help-text">0: no, 1: yes</div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label required">Thiếu máu (ane)</label>
+                                        <select class="form-select" id="ane" name="ane" required>
+                                            <option value="0">Không</option>
+                                            <option value="1">Có</option>
+                                        </select>
+                                        <div class="help-text">0: no, 1: yes</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                <button type="button" class="btn btn-secondary me-md-2" onclick="fillSampleData('ckd')">
+                                    <i class="bi bi-file-earmark-medical"></i> Mẫu CKD
+                                </button>
+                                <button type="button" class="btn btn-secondary me-md-2" onclick="fillSampleData('notckd')">
+                                    <i class="bi bi-file-earmark-check"></i> Mẫu không CKD
+                                </button>
+                                <button type="button" class="btn btn-warning me-md-2" onclick="validateForm()">
+                                    <i class="bi bi-check-circle"></i> Kiểm tra
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i class="bi bi-calculator"></i> Chẩn đoán
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kết quả và thông tin -->
+            <div class="col-lg-4">
+                <div class="card result-box" id="resultCard">
+                    <div class="card-header" id="resultHeader">
+                        <h4 class="mb-0"><i class="bi bi-graph-up"></i> Kết quả chẩn đoán</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <div id="resultIcon" style="font-size: 5rem;"></div>
+                            <h3 id="resultTitle" class="mt-3 mb-2"></h3>
+                            <div id="resultSubtitle" class="mb-4"></div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Xác suất dự đoán:</h5>
+                            <div class="progress mb-2" style="height: 25px;">
+                                <div id="ckdProgress" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                                <div id="notCkdProgress" class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 text-danger">
+                                    <strong>Mắc CKD:</strong> <span id="ckdPercent">0%</span>
+                                </div>
+                                <div class="col-6 text-success text-end">
+                                    <strong>Không CKD:</strong> <span id="notCkdPercent">100%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info" id="recommendation">
+                            <h6><i class="bi bi-lightbulb"></i> Khuyến nghị:</h6>
+                            <p id="recommendationText"></p>
+                        </div>
+                        
+                        <div class="alert alert-warning small">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Lưu ý:</strong> Đây là kết quả từ AI, cần tham khảo ý kiến bác sĩ.
+                        </div>
+                        
+                        <button class="btn btn-outline-primary w-100" onclick="resetForm()">
+                            <i class="bi bi-arrow-repeat"></i> Chẩn đoán mới
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="bi bi-info-circle"></i> Thông tin hệ thống</h4>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Model:</strong> ANN (3 hidden layers)</p>
+                        <p><strong>Độ chính xác:</strong> 85% trên test set</p>
+                        <p><strong>Số features:</strong> 24</p>
+                        <p><strong>API Status:</strong> <span id="apiStatus" class="badge bg-success">Online</span></p>
+                        <hr>
+                        <p class="small mb-0">
+                            <i class="bi bi-github"></i> 
+                            <strong>Feature order:</strong>
+                            <code class="d-block mt-1 small">age,bp,sg,al,su,rbc,pc,pcc,ba,bgr,bu,sc,sod,pot,hemo,pcv,wc,rc,htn,dm,cad,appet,pe,ane</code>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>© 2025 - Đề tài "Nghiên cứu và xây dựng mô hình dự đoán nguy cơ mắc bệnh suy thận"</p>
+            <p>Nhóm 05 - Lớp 20251IT6122002 - Trường Đại học Công nghiệp Hà Nội</p>
+            <p class="small">Sử dụng mô hình mạng nơ-ron nhân tạo (ANN)</p>
+        </div>
+    </div>
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // API URL
+        const API_URL = window.location.origin + '/predict';
+        
+        // Debug: In ra feature order
+        console.log("Feature order trong model:", [
+            "age","bp","sg","al","su","rbc","pc","pcc","ba",
+            "bgr","bu","sc","sod","pot","hemo","pcv","wc","rc",
+            "htn","dm","cad","appet","pe","ane"
+        ]);
+
+        // Dữ liệu mẫu CKD
+        const SAMPLE_CKD = {
+            age: 65,
+            bp: 80,
+            sg: 1.010,
+            al: 4,
+            su: 0,
+            rbc: 1,  // abnormal
+            pc: 1,   // abnormal
+            pcc: 0,  // notpresent
+            ba: 0,   // notpresent
+            bgr: 148,
+            bu: 56,
+            sc: 3.8,
+            sod: 137,
+            pot: 4.6,
+            hemo: 11.2,
+            pcv: 38,
+            wc: 7800,
+            rc: 4.5,
+            htn: 1,  // yes
+            dm: 1,   // yes
+            cad: 0,  // no
+            appet: 1, // poor
+            pe: 1,   // yes
+            ane: 1   // yes
+        };
+
+        // Dữ liệu mẫu không CKD
+        const SAMPLE_NOT_CKD = {
+            age: 45,
+            bp: 120,
+            sg: 1.025,
+            al: 0,
+            su: 0,
+            rbc: 0,  // normal
+            pc: 0,   // normal
+            pcc: 0,  // notpresent
+            ba: 0,   // notpresent
+            bgr: 90,
+            bu: 12,
+            sc: 0.8,
+            sod: 142,
+            pot: 3.8,
+            hemo: 14.5,
+            pcv: 44,
+            wc: 6500,
+            rc: 5.2,
+            htn: 0,  // no
+            dm: 0,   // no
+            cad: 0,  // no
+            appet: 0, // good
+            pe: 0,   // no
+            ane: 0   // no
+        };
+
+        // Xử lý form submit
+        document.getElementById('ckdForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await predictCKD();
+        });
+
+        // Hàm kiểm tra form
+        function validateForm() {
+            const form = document.getElementById('ckdForm');
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                alert('Vui lòng điền đầy đủ tất cả các trường bắt buộc!');
+                return false;
+            }
+            
+            // Lấy và hiển thị dữ liệu đã nhập
+            const formData = getFormData();
+            console.log("Dữ liệu form đã nhập:", formData);
+            
+            // Hiển thị dữ liệu JSON
+            alert('Form hợp lệ! Dữ liệu:\n' + JSON.stringify(formData, null, 2));
+            return true;
+        }
+
+        // Lấy dữ liệu từ form
+        function getFormData() {
+            return {
+                age: parseFloat(document.getElementById('age').value),
+                bp: parseFloat(document.getElementById('bp').value),
+                sg: parseFloat(document.getElementById('sg').value),
+                al: parseFloat(document.getElementById('al').value),
+                su: parseFloat(document.getElementById('su').value),
+                rbc: parseInt(document.getElementById('rbc').value),
+                pc: parseInt(document.getElementById('pc').value),
+                pcc: parseInt(document.getElementById('pcc').value),
+                ba: parseInt(document.getElementById('ba').value),
+                bgr: parseFloat(document.getElementById('bgr').value),
+                bu: parseFloat(document.getElementById('bu').value),
+                sc: parseFloat(document.getElementById('sc').value),
+                sod: parseFloat(document.getElementById('sod').value),
+                pot: parseFloat(document.getElementById('pot').value),
+                hemo: parseFloat(document.getElementById('hemo').value),
+                pcv: parseFloat(document.getElementById('pcv').value),
+                wc: parseFloat(document.getElementById('wc').value),
+                rc: parseFloat(document.getElementById('rc').value),
+                htn: parseInt(document.getElementById('htn').value),
+                dm: parseInt(document.getElementById('dm').value),
+                cad: parseInt(document.getElementById('cad').value),
+                appet: parseInt(document.getElementById('appet').value),
+                pe: parseInt(document.getElementById('pe').value),
+                ane: parseInt(document.getElementById('ane').value)
+            };
+        }
+
+        // Hàm dự đoán
+        async function predictCKD() {
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            // Hiển thị loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang phân tích...';
+            
+            try {
+                // Lấy dữ liệu từ form
+                const formData = getFormData();
+                
+                // Debug: In ra dữ liệu gửi đi
+                console.log("📤 Gửi dữ liệu đến API:", formData);
+                console.log("📋 Thứ tự features:", Object.keys(formData));
+                
+                // Gọi API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log("📥 Nhận kết quả từ API:", result);
+                
+                // Hiển thị kết quả
+                displayResult(result);
+                
+            } catch (error) {
+                console.error('❌ Lỗi:', error);
+                alert('Có lỗi xảy ra khi kết nối đến máy chủ. Vui lòng thử lại sau.\nChi tiết: ' + error.message);
+            } finally {
+                // Khôi phục nút
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // Hiển thị kết quả
+        function displayResult(result) {
+            const resultCard = document.getElementById('resultCard');
+            const resultHeader = document.getElementById('resultHeader');
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultSubtitle = document.getElementById('resultSubtitle');
+            const ckdProgress = document.getElementById('ckdProgress');
+            const notCkdProgress = document.getElementById('notCkdProgress');
+            const ckdPercent = document.getElementById('ckdPercent');
+            const notCkdPercent = document.getElementById('notCkdPercent');
+            const recommendationText = document.getElementById('recommendationText');
+            
+            const ckdProb = (result.probability_ckd * 100).toFixed(1);
+            const notCkdProb = (result.probability_not_ckd * 100).toFixed(1);
+            
+            // Cập nhật progress bars
+            ckdProgress.style.width = ckdProb + '%';
+            notCkdProgress.style.width = notCkdProb + '%';
+            ckdPercent.textContent = ckdProb + '%';
+            notCkdPercent.textContent = notCkdProb + '%';
+            
+            if (result.prediction === 1) {
+                // Kết quả dương tính (CKD)
+                resultHeader.className = 'card-header result-positive';
+                resultIcon.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-white"></i>';
+                resultTitle.textContent = 'CÓ NGUY CƠ CKD';
+                resultTitle.className = 'text-white fw-bold';
+                resultSubtitle.innerHTML = `<span class="badge bg-light text-danger fs-6">Dương tính (${ckdProb}%)</span>`;
+                resultSubtitle.className = 'text-white';
+                
+                recommendationText.textContent = 'Bệnh nhân có nguy cơ mắc bệnh thận mạn tính. Khuyến nghị: Thực hiện các xét nghiệm chuyên sâu, tham khảo ý kiến bác sĩ chuyên khoa thận, theo dõi huyết áp và đường huyết thường xuyên, hạn chế thức ăn mặn và đạm động vật.';
+                
+            } else {
+                // Kết quả âm tính (Not CKD)
+                resultHeader.className = 'card-header result-negative';
+                resultIcon.innerHTML = '<i class="bi bi-check-circle-fill text-white"></i>';
+                resultTitle.textContent = 'KHÔNG CÓ NGUY CƠ CKD';
+                resultTitle.className = 'text-white fw-bold';
+                resultSubtitle.innerHTML = `<span class="badge bg-light text-success fs-6">Âm tính (${notCkdProb}%)</span>`;
+                resultSubtitle.className = 'text-white';
+                
+                recommendationText.textContent = 'Bệnh nhân hiện không có dấu hiệu mắc bệnh thận mạn tính. Khuyến nghị: Duy trì lối sống lành mạnh, kiểm tra sức khỏe định kỳ 6 tháng/lần, uống đủ nước (2-2.5 lít/ngày), hạn chế thức ăn mặn và duy trì cân nặng hợp lý.';
+            }
+            
+            // Hiển thị kết quả
+            resultCard.style.display = 'block';
+            
+            // Cuộn đến kết quả
+            resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Điền dữ liệu mẫu
+        function fillSampleData(type) {
+            const sample = type === 'ckd' ? SAMPLE_CKD : SAMPLE_NOT_CKD;
+            
+            for (const [key, value] of Object.entries(sample)) {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.tagName === 'SELECT') {
+                        element.value = value;
+                    } else {
+                        element.value = value;
+                    }
+                }
+            }
+            
+            alert(`Đã điền dữ liệu mẫu: ${type === 'ckd' ? 'CKD (dương tính)' : 'Không CKD (âm tính)'}`);
+        }
+        
+        // Reset form
+        function resetForm() {
+            document.getElementById('ckdForm').reset();
+            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('age').focus();
+        }
+        
+        // Kiểm tra API status khi load trang
+        window.onload = async function() {
+            try {
+                const response = await fetch(API_URL.replace('/predict', '/'));
+                if (response.ok) {
+                    document.getElementById('apiStatus').className = 'badge bg-success';
+                    document.getElementById('apiStatus').textContent = 'Online';
+                }
+            } catch (error) {
+                document.getElementById('apiStatus').className = 'badge bg-danger';
+                document.getElementById('apiStatus').textContent = 'Offline';
+            }
+            
+            // Tự động focus vào ô đầu tiên
+            document.getElementById('age').focus();
+        };
+    </script>
+</body>
+</html>
