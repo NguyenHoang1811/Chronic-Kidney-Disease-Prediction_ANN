@@ -2,6 +2,9 @@ import numpy as np
 import joblib
 import uvicorn
 from fastapi import FastAPI
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from tensorflow.keras.models import load_model
 
@@ -84,6 +87,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # 6. HÀM TIỆN ÍCH DỰ ĐOÁN
 
 def predict_ckd(features: PatientFeatures):
@@ -112,13 +118,20 @@ def predict_ckd(features: PatientFeatures):
 
 
 # ROUTES CỦA API
+# @app.get("/")
+# def root():
+#     return {
+#         "message": "CKD Prediction API is running.",
+#         "usage": "Gửi POST /predict với JSON chứa các đặc trưng bệnh nhân.",
+#         "example_endpoint": "/predict"
+#     }
+
 @app.get("/")
-def root():
-    return {
-        "message": "CKD Prediction API is running.",
-        "usage": "Gửi POST /predict với JSON chứa các đặc trưng bệnh nhân.",
-        "example_endpoint": "/predict"
-    }
+def home(request: Request):
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request}
+    )
 
 @app.post("/predict")
 def predict_endpoint(features: PatientFeatures):
@@ -135,4 +148,4 @@ def predict_endpoint(features: PatientFeatures):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
