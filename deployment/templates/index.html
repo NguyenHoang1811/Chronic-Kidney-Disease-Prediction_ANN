@@ -590,9 +590,9 @@
             if (result.prediction === 1) {
                 // Kết quả dương tính (CKD)
                 resultHeader.className = 'card-header result-positive';
-                resultIcon.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-white"></i>';
-                resultTitle.textContent = 'CÓ NGUY CƠ CKD';
-                resultTitle.className = 'text-white fw-bold';
+                resultIcon.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-danger"></i>';
+                resultTitle.className = 'text-danger fw-bold';
+                resultSubtitle.className = 'text-danger';
                 resultSubtitle.innerHTML = `<span class="badge bg-light text-danger fs-6">Dương tính (${ckdProb}%)</span>`;
                 resultSubtitle.className = 'text-white';
                 
@@ -601,9 +601,9 @@
             } else {
                 // Kết quả âm tính (Not CKD)
                 resultHeader.className = 'card-header result-negative';
-                resultIcon.innerHTML = '<i class="bi bi-check-circle-fill text-white"></i>';
-                resultTitle.textContent = 'KHÔNG CÓ NGUY CƠ CKD';
-                resultTitle.className = 'text-white fw-bold';
+                resultIcon.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+                resultTitle.className = 'text-success fw-bold';
+                resultSubtitle.className = 'text-success';
                 resultSubtitle.innerHTML = `<span class="badge bg-light text-success fs-6">Âm tính (${notCkdProb}%)</span>`;
                 resultSubtitle.className = 'text-white';
                 
